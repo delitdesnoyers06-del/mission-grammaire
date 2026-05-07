@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mission Grammaire CE1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="script.js"></script>
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar card">
+        <div class="topbar-brand">
+          <p class="eyebrow">CE1</p>
+          <div>
+            <h1>Mission Grammaire</h1>
+            <p class="subtitle compact-subtitle">
+              Sujet, verbe, adjectif, nom et déterminant.
+            </p>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="profile-controls compact-profile-controls">
+            <select id="profileSelect" aria-label="Choisir un profil"></select>
+            <button id="addProfileButton" class="secondary-button compact-button" type="button">
+              + Profil
+            </button>
+          </div>
+          <p id="profileMeta" class="profile-meta compact-profile-meta">
+            Sauvegarde locale active.
+          </p>
+        </div>
+      </header>
+
+      <section class="card module-hub">
+        <div class="module-hub-head compact-head">
+          <p class="eyebrow">Modules</p>
+          <p id="activeModuleSummary" class="module-summary">
+            Accès direct au module en cours.
+          </p>
+        </div>
+
+        <div id="moduleNav" class="module-nav-grid" role="tablist" aria-label="Modules d'apprentissage"></div>
+      </section>
+
+      <section id="grammarPanel" class="module-panel" aria-label="Module Mission grammaire">
+        <section class="card stats compact-stats-card">
+          <div class="panel-topline">
+            <h2>Mission grammaire</h2>
+            <p id="sessionMode" class="session-mode">Mode actuel : phrases restantes</p>
+          </div>
+
+          <div class="stats-grid compact-stats-grid">
+            <div>
+              <span class="stat-label">Progression</span>
+              <strong id="sentenceCounter">0 / 0</strong>
+            </div>
+            <div>
+              <span class="stat-label">Score</span>
+              <strong id="score">0</strong>
+            </div>
+            <div>
+              <span class="stat-label">Série</span>
+              <strong id="streak">0</strong>
+            </div>
+            <div>
+              <span class="stat-label">Réussite</span>
+              <strong id="accuracy">0 %</strong>
+            </div>
+          </div>
+
+          <div class="progress-wrap" aria-label="Progression du jeu">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+
+          <details class="help-disclosure inline-details">
+            <summary>Plus d’infos</summary>
+            <div class="mini-stats-grid">
+              <div><span class="stat-label">Restantes</span><strong id="remainingCounter">0</strong></div>
+              <div><span class="stat-label">Défis validés</span><strong id="missionCounter">0 / 0</strong></div>
+              <div><span class="stat-label">Essais / réussite</span><strong id="averageAttempts">0</strong></div>
+              <div><span class="stat-label">Difficulté</span><strong id="difficultyLevel">douce</strong></div>
+              <div><span class="stat-label">Aide active</span><strong id="supportLevel">guidage fort</strong></div>
+            </div>
+          </details>
+        </section>
+
+        <section class="card game-card">
+          <div class="mission-header">
+            <div>
+              <h2 id="missionPrompt">Trouve le sujet.</h2>
+            </div>
+            <button id="hintButton" class="secondary-button compact-button" type="button">
+              💡 Indice
+            </button>
+          </div>
+
+          <p id="hintText" class="hint" aria-live="polite"></p>
+
+          <div class="sentence-area">
+            <p class="instruction">Clique sur les mots utiles.</p>
+            <div id="sentenceWords" class="words" aria-label="Phrase à analyser"></div>
+            <div id="grammarLegend" class="grammar-legend" aria-live="polite"></div>
+            <p class="sentence-dot">.</p>
+          </div>
+
+          <div class="actions">
+            <button id="checkButton" class="primary-button" type="button">
+              Vérifier
+            </button>
+            <button id="clearButton" class="secondary-button" type="button">
+              Effacer
+            </button>
+            <button id="restartButton" class="secondary-button" type="button">
+              Recommencer
+            </button>
+            <button id="reviewButton" class="secondary-button" type="button">
+              Réviser toutes les phrases
+            </button>
+          </div>
+
+          <div class="review-tools">
+            <label class="review-label" for="reviewFocusSelect">Révision ciblée</label>
+            <select id="reviewFocusSelect"></select>
+            <button id="targetReviewButton" class="secondary-button" type="button">
+              Lancer
+            </button>
+            <button id="normalModeButton" class="secondary-button" type="button">
+              Retour au mode normal
+            </button>
+          </div>
+
+          <p id="feedback" class="feedback" aria-live="polite"></p>
+        </section>
+
+        <section class="card compact-followup-card">
+          <details class="help-disclosure inline-details">
+            <summary>Voir le suivi</summary>
+
+            <div class="compact-followup-grid">
+              <article class="compact-block">
+                <h3>Lacunes</h3>
+                <p id="weaknessSummary" class="weakness-summary">
+                  Les statistiques seront enregistrées automatiquement dans ce navigateur.
+                </p>
+                <ul id="weaknessList" class="weakness-list"></ul>
+              </article>
+
+              <article class="compact-block">
+                <h3>Stats détaillées</h3>
+                <div id="missionBreakdown" class="breakdown-list"></div>
+              </article>
+
+              <article class="compact-block">
+                <h3>Historique</h3>
+                <ul id="dailyStatsList" class="daily-list"></ul>
+              </article>
+
+              <article class="compact-block">
+                <h3>Récompenses</h3>
+                <ul id="badgeList" class="badge-list"></ul>
+              </article>
+
+              <article class="compact-block compact-block-full">
+                <h3>Banque de phrases</h3>
+                <ol id="sentenceBank" class="sentence-bank"></ol>
+              </article>
+            </div>
+          </details>
+        </section>
+      </section>
+
+      <section id="conjugationPanel" class="module-panel" aria-label="Module Atelier conjugaison" hidden>
+        <section class="card conjugation-card">
+          <div class="conjugation-header">
+            <div>
+              <h2>Atelier conjugaison</h2>
+              <p id="conjugationLessonMeta" class="subtitle-small"></p>
+            </div>
+            <div class="conjugation-stats compact-conjugation-stats">
+              <div>
+                <span class="stat-label">Progression</span>
+                <strong id="conjugationProgressText">0 / 0</strong>
+              </div>
+              <div>
+                <span class="stat-label">Niveau</span>
+                <strong id="conjugationLevel">1 · découverte</strong>
+              </div>
+              <div>
+                <span class="stat-label">Série</span>
+                <strong id="conjugationStreak">0</strong>
+              </div>
+              <div>
+                <span class="stat-label">Réussite</span>
+                <strong id="conjugationAccuracy">0 %</strong>
+              </div>
+              <div>
+                <span class="stat-label">Défis inf.</span>
+                <strong id="conjugationInfinitiveStats">0 / 0</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="conjugation-toolbar">
+            <label class="review-label" for="conjugationLessonSelect">Leçon</label>
+            <select id="conjugationLessonSelect" aria-label="Choisir une leçon de conjugaison"></select>
+            <button id="conjugationReviewButton" class="secondary-button compact-button" type="button">
+              Réviser mes difficultés
+            </button>
+            <button id="conjugationNormalButton" class="secondary-button compact-button" type="button">
+              Retour au parcours
+            </button>
+            <p id="conjugationWeaknessSummary" class="session-mode">Les besoins de consolidation apparaîtront ici.</p>
+          </div>
+
+          <div class="progress-wrap" aria-label="Progression de la leçon de conjugaison">
+            <div class="progress-bar" id="conjugationProgressBar"></div>
+          </div>
+
+          <div class="conjugation-grid">
+            <div class="conjugation-playground">
+              <p id="conjugationPrompt" class="conjugation-prompt"></p>
+
+              <div id="conjugationMiniGame" class="conjugation-mini-game" hidden>
+                <p id="conjugationMiniGamePrompt" class="conjugation-mini-game-prompt"></p>
+                <div id="conjugationMiniGameOptions" class="conjugation-mini-game-options"></div>
+                <p id="conjugationMiniGameMeta" class="conjugation-mini-game-meta"></p>
+              </div>
+
+              <div id="conjugationAnswerRow" class="conjugation-answer-row">
+                <span id="conjugationPronoun" class="pronoun-chip">je</span>
+                <input
+                  id="conjugationInput"
+                  class="conjugation-input"
+                  type="text"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  placeholder="Écris la forme conjuguée"
+                  aria-label="Réponse de conjugaison"
+                />
+              </div>
+
+              <div id="conjugationActions" class="actions">
+                <button id="conjugationCheckButton" class="primary-button" type="button">
+                  Vérifier
+                </button>
+                <button id="conjugationHintButton" class="secondary-button" type="button">
+                  💡 Rappel
+                </button>
+              </div>
+
+              <p id="conjugationHintText" class="hint" aria-live="polite"></p>
+              <p id="conjugationFeedback" class="feedback" aria-live="polite"></p>
+            </div>
+
+            <aside>
+              <details class="help-disclosure conjugation-aids">
+                <summary>Afficher les aides de conjugaison</summary>
+                <div class="conjugation-sidebar">
+                  <div class="conjugation-reference-card">
+                    <h3>Rappel de la règle</h3>
+                    <p id="conjugationPattern" class="conjugation-pattern"></p>
+                  </div>
+
+                  <div class="conjugation-reference-card">
+                    <h3 id="conjugationVisualTitle">Repère visuel</h3>
+                    <p id="conjugationVisualSubtitle" class="conjugation-visual-subtitle"></p>
+                    <div id="conjugationVisualParts" class="conjugation-visual-parts"></div>
+                  </div>
+
+                  <div class="conjugation-reference-card">
+                    <h3 id="conjugationReferenceTitle">Repères de conjugaison</h3>
+                    <ul id="conjugationEndingsList" class="conjugation-reference-list"></ul>
+                  </div>
+
+                  <div class="conjugation-reference-card">
+                    <h3>Verbes travaillés</h3>
+                    <ul id="conjugationVerbList" class="conjugation-reference-list"></ul>
+                  </div>
+
+                  <div class="conjugation-reference-card">
+                    <h3>À consolider</h3>
+                    <ul id="conjugationFocusList" class="conjugation-reference-list"></ul>
+                  </div>
+                </div>
+              </details>
+            </aside>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>
