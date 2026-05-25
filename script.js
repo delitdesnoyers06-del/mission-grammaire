@@ -617,7 +617,7 @@ function showAdjectiveHint() {
   render();
 }
 
-function verifyAdjectiveAnswer() {
+function handleAdjectiveAnswerVerification() {
   const profile = getProfile();
   ensureAdjectiveState(profile);
 
@@ -730,7 +730,7 @@ function handleAdjectiveKeydown(event) {
   }
 
   event.preventDefault();
-  verifyAdjectiveAnswer();
+  handleAdjectiveAnswerVerification();
 }
 
 function verifyConjugationAnswer() {
@@ -1004,7 +1004,7 @@ dom.profileSelect.addEventListener("change", handleProfileChange);
 
 // Écouteurs pour le module adjectifs
 if (adjDom.adjectiveCheckButton) {
-  adjDom.adjectiveCheckButton.addEventListener("click", verifyAdjectiveAnswer);
+  adjDom.adjectiveCheckButton.addEventListener("click", handleAdjectiveAnswerVerification);
 }
 if (adjDom.adjectiveHintButton) {
   adjDom.adjectiveHintButton.addEventListener("click", showAdjectiveHint);
