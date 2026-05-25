@@ -7,6 +7,10 @@ import {
   positiveMessages,
 } from "./js/data/content.js";
 import {
+  adjectiveExercises,
+  totalAdjectiveExercises,
+} from "./js/data/adjective-content.js";
+import {
   createSentenceStatsFactory,
   loadAppData,
   resetAppData,
@@ -26,6 +30,20 @@ import {
   submitConjugationAnswer,
   submitConjugationInfinitiveAnswer,
 } from "./js/features/conjugation.js";
+import {
+  createDefaultAdjectiveState,
+  normalizeAdjectiveState,
+  getCurrentAdjectiveExercise,
+  getNormalAdjectiveCandidates,
+  verifyAdjectiveAnswer,
+  recordAdjectiveAttempt,
+  getAdjectiveHint,
+  getAdjectiveProgress,
+  advanceAdjectiveExercise,
+  startAdjectiveReview,
+  stopAdjectiveReview,
+  syncAdjectiveRound,
+} from "./js/features/adjective.js";
 import { addProfile, getActiveProfile, switchProfile } from "./js/features/profiles.js";
 import { syncBadges } from "./js/features/rewards.js";
 import { getReviewCandidates, setReviewMode } from "./js/features/review.js";
@@ -33,11 +51,18 @@ import { getDueReviewSentences, updateSentenceSchedule } from "./js/features/spa
 import { getAccuracy, getSentenceStats, recordAttempt } from "./js/features/stats.js";
 import { renderConjugationSection } from "./js/ui/conjugation-render.js";
 import { getDomElements, populateReviewFocusSelect, renderApp, renderModuleHub, renderProfiles, setFeedback } from "./js/ui/render.js";
+import {
+  getAdjectiveDomElements,
+  renderAdjectiveSection,
+  populateAdjectiveCategorySelect,
+  setAdjectiveFeedback,
+} from "./js/ui/adjective-render.js";
 
 const sentences = generateSentences();
 const createSentenceStats = createSentenceStatsFactory(missionTemplates);
 const appData = loadAppData(missionTemplates);
 const dom = getDomElements();
+const adjDom = getAdjectiveDomElements();
 
 const uiState = {
   activeModuleId: "grammar",
@@ -61,11 +86,18 @@ const uiState = {
   conjugationFeedbackStatus: "",
   conjugationRetryItemId: "",
   conjugationRetryCount: 0,
+  // State pour le module adjectifs
+  adjectiveDraft: "",
+  adjectiveHintMessage: "",
+  adjectiveFeedbackMessage: "",
+  adjectiveFeedbackStatus: "",
+  adjectiveAttemptCount: 0,
 };
 
 const MODULE_IDS = {
   grammar: "grammar",
   conjugation: "conjugation",
+  adjective: "adjective",
 };
 
 function arraysMatch(first, second) {
@@ -129,8 +161,18 @@ function getProfile() {
   return getActiveProfile(appData);
 }
 
+/**
+ * S'assurer que le state du module adjective est initialisé
+ */
+function ensureAdjectiveState(profile) {
+  if (!profile.adjective) {
+    profile.adjective = createDefaultAdjectiveState();
+  }
+}
+
 function getAvailableModules(profile) {
   const conjugationProgress = getConjugationModuleProgress(profile, conjugationLessons);
+  const adjectiveProgress = profile.adjective ? getAdjectiveProgress(profile) : { completed: 0, total: totalAdjectiveExercises };
 
   return [
     {
@@ -151,6 +193,16 @@ function getAvailableModules(profile) {
       meta: `${conjugationProgress.completedCount}/${conjugationProgress.totalCount} formes · ${conjugationProgress.unlockedLessonCount}/${conjugationProgress.lessonCount} leçons`,
       badge: "MVP",
       summary: "Module actif : Atelier conjugaison.",
+      isAvailable: true,
+    },
+    {
+      id: MODULE_IDS.adjective,
+      panelId: "adjectivePanel",
+      title: "Atelier adjectifs",
+      description: "Complète les phrases avec les adjectifs correctement accordés.",
+      meta: `${adjectiveProgress.completed}/${adjectiveProgress.total} exercices · ${profile.adjective ? profile.adjective.score : 0} points`,
+      badge: "Nouveau",
+      summary: "Module actif : Atelier adjectifs.",
       isAvailable: true,
     },
   ];
@@ -183,6 +235,9 @@ function setActiveModule(moduleId) {
 function syncModulePanels() {
   dom.grammarPanel.hidden = uiState.activeModuleId !== MODULE_IDS.grammar;
   dom.conjugationPanel.hidden = uiState.activeModuleId !== MODULE_IDS.conjugation;
+  if (adjDom.adjectivePanel) {
+    adjDom.adjectivePanel.hidden = uiState.activeModuleId !== MODULE_IDS.adjective;
+  }
 }
 
 function getSentenceById(sentenceId) {
@@ -381,6 +436,18 @@ function render() {
     feedbackStatus: uiState.conjugationFeedbackStatus,
   });
 
+  // Rendre le module adjectifs
+  ensureAdjectiveState(profile);
+  renderAdjectiveSection({
+    dom: adjDom,
+    profile,
+    exercises: adjectiveExercises,
+    draftValue: uiState.adjectiveDraft,
+    hintMessage: uiState.adjectiveHintMessage,
+    feedbackMessage: uiState.adjectiveFeedbackMessage,
+    feedbackStatus: uiState.adjectiveFeedbackStatus,
+  });
+
   if (!uiState.finished) {
     dom.hintText.textContent = uiState.hintMessage;
   }
@@ -529,6 +596,141 @@ function handleConjugationMiniGameClick(event) {
   uiState.conjugationFeedbackStatus = result.isCorrect ? "success" : "error";
   saveAppData(appData);
   render();
+}
+
+// ============================================
+// Fonctions pour le module Adjectifs
+// ============================================
+
+function handleAdjectiveDraftChange() {
+  uiState.adjectiveDraft = adjDom.adjectiveInput ? adjDom.adjectiveInput.value : "";
+}
+
+function showAdjectiveHint() {
+  const profile = getProfile();
+  ensureAdjectiveState(profile);
+
+  const hintMessage = getAdjectiveHint(profile, uiState.adjectiveAttemptCount);
+  uiState.adjectiveHintMessage = hintMessage;
+  uiState.adjectiveAttemptCount = Math.min(uiState.adjectiveAttemptCount + 1, 2);
+  saveAppData(appData);
+  render();
+}
+
+function verifyAdjectiveAnswer() {
+  const profile = getProfile();
+  ensureAdjectiveState(profile);
+
+  const rawAnswer = uiState.adjectiveDraft.trim();
+
+  if (!rawAnswer) {
+    uiState.adjectiveFeedbackMessage = "Écris un adjectif avant de vérifier.";
+    uiState.adjectiveFeedbackStatus = "error";
+    render();
+    return;
+  }
+
+  const result = verifyAdjectiveAnswer(profile, rawAnswer);
+
+  if (result.isCorrect) {
+    uiState.adjectiveDraft = "";
+    uiState.adjectiveHintMessage = "";
+    uiState.adjectiveAttemptCount = 0;
+    uiState.adjectiveFeedbackMessage = result.message;
+    uiState.adjectiveFeedbackStatus = "success";
+
+    // Enregistrer la tentative
+    recordAdjectiveAttempt(profile, true, result.exerciseId);
+    syncAdjectiveRound(profile);
+
+    // Avancer vers l'exercice suivant
+    const nextExercise = advanceAdjectiveExercise(profile);
+    if (nextExercise === null) {
+      // Tous les exercices sont terminés
+      uiState.adjectiveFeedbackMessage = "Félicitations ! Tu as terminé tous les exercices.";
+    }
+
+    saveAppData(appData);
+    render();
+    
+    // Focus sur l'input pour le prochain exercice
+    if (nextExercise !== null) {
+      window.setTimeout(() => {
+        const input = document.getElementById("adjectiveInput");
+        if (input) input.focus();
+      }, 100);
+    }
+    return;
+  }
+
+  // Réponse incorrecte
+  uiState.adjectiveAttemptCount = Math.min(uiState.adjectiveAttemptCount + 1, 2);
+  uiState.adjectiveHintMessage = getAdjectiveHint(profile, uiState.adjectiveAttemptCount);
+  uiState.adjectiveFeedbackMessage = result.message;
+  uiState.adjectiveFeedbackStatus = "error";
+
+  // Enregistrer la tentative
+  recordAdjectiveAttempt(profile, false, result.exerciseId);
+  saveAppData(appData);
+  render();
+}
+
+function launchAdjectiveCategoryReview() {
+  const profile = getProfile();
+  ensureAdjectiveState(profile);
+
+  const selectedCategory = adjDom.adjectiveCategorySelect ? adjDom.adjectiveCategorySelect.value : "all";
+
+  if (selectedCategory === "all") {
+    const result = startAdjectiveReview(profile, "all");
+    if (!result.started) {
+      uiState.adjectiveFeedbackMessage = "Aucun exercice à réviser pour le moment.";
+      uiState.adjectiveFeedbackStatus = "success";
+      render();
+      return;
+    }
+    uiState.adjectiveFeedbackMessage = `Révision complète lancé sur ${result.count} exercice(s).`;
+    uiState.adjectiveFeedbackStatus = "success";
+  } else {
+    const result = startAdjectiveReview(profile, "category", selectedCategory);
+    if (!result.started) {
+      uiState.adjectiveFeedbackMessage = `Aucun exercice à réviser pour la catégorie ${selectedCategory} pour le moment.`;
+      uiState.adjectiveFeedbackStatus = "success";
+      render();
+      return;
+    }
+    uiState.adjectiveFeedbackMessage = `Révision de la catégorie ${selectedCategory} lancé sur ${result.count} exercice(s).`;
+    uiState.adjectiveFeedbackStatus = "success";
+  }
+
+  uiState.adjectiveDraft = "";
+  uiState.adjectiveHintMessage = "";
+  uiState.adjectiveAttemptCount = 0;
+  saveAppData(appData);
+  render();
+}
+
+function stopAdjectiveCategoryReview() {
+  const profile = getProfile();
+  ensureAdjectiveState(profile);
+
+  stopAdjectiveReview(profile);
+  uiState.adjectiveDraft = "";
+  uiState.adjectiveHintMessage = "";
+  uiState.adjectiveFeedbackMessage = "Retour au parcours adaptatif.";
+  uiState.adjectiveFeedbackStatus = "success";
+  uiState.adjectiveAttemptCount = 0;
+  saveAppData(appData);
+  render();
+}
+
+function handleAdjectiveKeydown(event) {
+  if (event.key !== "Enter") {
+    return;
+  }
+
+  event.preventDefault();
+  verifyAdjectiveAnswer();
 }
 
 function verifyConjugationAnswer() {
@@ -771,9 +973,11 @@ function handleProfileChange() {
 
 function initialize() {
   populateReviewFocusSelect(dom, missionTemplates);
+  populateAdjectiveCategorySelect(adjDom, missionTemplates);
   const profile = getProfile();
   syncProfileToNormalMode(profile);
   ensureConjugationState(profile, conjugationLessons);
+  ensureAdjectiveState(profile);
   syncActiveModule(profile);
   syncBadges(profile, missionTemplates);
   saveAppData(appData);
@@ -797,5 +1001,37 @@ dom.normalModeButton.addEventListener("click", () => exitReviewMode());
 dom.targetReviewButton.addEventListener("click", launchTargetedReview);
 dom.addProfileButton.addEventListener("click", addNewProfile);
 dom.profileSelect.addEventListener("change", handleProfileChange);
+
+// Écouteurs pour le module adjectifs
+if (adjDom.adjectiveCheckButton) {
+  adjDom.adjectiveCheckButton.addEventListener("click", verifyAdjectiveAnswer);
+}
+if (adjDom.adjectiveHintButton) {
+  adjDom.adjectiveHintButton.addEventListener("click", showAdjectiveHint);
+}
+if (adjDom.adjectiveReviewButton) {
+  adjDom.adjectiveReviewButton.addEventListener("click", launchAdjectiveCategoryReview);
+}
+if (adjDom.adjectiveNormalButton) {
+  adjDom.adjectiveNormalButton.addEventListener("click", stopAdjectiveCategoryReview);
+}
+if (adjDom.adjectiveCategorySelect) {
+  adjDom.adjectiveCategorySelect.addEventListener("change", () => {
+    // Le bouton de révision est séparé, pas besoin de faire quoi que ce soit ici
+  });
+}
+
+// Écouteur pour l'input adjective (géré par délégation car l'input est recréé à chaque rendu)
+document.addEventListener("input", (event) => {
+  if (event.target && event.target.id === "adjectiveInput") {
+    handleAdjectiveDraftChange();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.target && event.target.id === "adjectiveInput") {
+    handleAdjectiveKeydown(event);
+  }
+});
 
 initialize();

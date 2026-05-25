@@ -44,6 +44,60 @@ function createEmptyConjugationState() {
   };
 }
 
+function createEmptyAdjectiveState() {
+  return {
+    currentExerciseId: 0,
+    completedExerciseIds: [],
+    score: 0,
+    streak: 0,
+    totalAttempts: 0,
+    exerciseStats: {},
+    currentRound: 0,
+    reviewMode: "normal",
+    reviewExerciseIds: [],
+    reviewExerciseIndex: 0,
+  };
+}
+
+function normalizeAdjectiveExerciseStats(stats = {}) {
+  return {
+    correct: Math.max(0, Number(stats?.correct) || 0),
+    wrong: Math.max(0, Number(stats?.wrong) || 0),
+    lastPlayedAt: typeof stats?.lastPlayedAt === "string" ? stats.lastPlayedAt : "",
+    mastery: Math.max(0, Math.min(4, Number(stats?.mastery) || 0)),
+    nextReviewRound: Number.isInteger(stats?.nextReviewRound) ? stats.nextReviewRound : null,
+    wrongInCurrentCycle: Math.max(0, Number(stats?.wrongInCurrentCycle) || 0),
+    seenCount: Math.max(0, Number(stats?.seenCount) || 0),
+  };
+}
+
+function normalizeAdjectiveState(state = {}) {
+  const safeState = createEmptyAdjectiveState();
+
+  return {
+    currentExerciseId: Number(state?.currentExerciseId) || safeState.currentExerciseId,
+    completedExerciseIds: Array.isArray(state?.completedExerciseIds)
+      ? [...new Set(state.completedExerciseIds.map((value) => Number(value)).filter(Number.isInteger))]
+      : [],
+    score: Math.max(0, Number(state?.score) || 0),
+    streak: Math.max(0, Number(state?.streak) || 0),
+    totalAttempts: Math.max(0, Number(state?.totalAttempts) || 0),
+    currentRound: Math.max(0, Number(state?.currentRound) || 0),
+    reviewMode: typeof state?.reviewMode === "string" ? state.reviewMode : "normal",
+    reviewExerciseIds: Array.isArray(state?.reviewExerciseIds)
+      ? [...new Set(state.reviewExerciseIds.map((value) => Number(value)).filter(Number.isInteger))]
+      : [],
+    reviewExerciseIndex: Math.max(0, Number(state?.reviewExerciseIndex) || 0),
+    exerciseStats: Object.entries(state?.exerciseStats || {}).reduce((normalized, [exerciseId, stats]) => {
+      const id = Number(exerciseId);
+      if (Number.isInteger(id)) {
+        normalized[id] = normalizeAdjectiveExerciseStats(stats);
+      }
+      return normalized;
+    }, {}),
+  };
+}
+
 export function createDefaultProfile(profileId, name, missionTemplates) {
   return {
     id: profileId,
@@ -64,6 +118,7 @@ export function createDefaultProfile(profileId, name, missionTemplates) {
     badges: [],
     lastPlayedDay: "",
     conjugation: createEmptyConjugationState(),
+    adjective: createEmptyAdjectiveState(),
   };
 }
 
@@ -205,6 +260,7 @@ function normalizeProfile(profile, missionTemplates, fallbackName) {
     badges: normalizeBadges(profile?.badges),
     lastPlayedDay: typeof profile?.lastPlayedDay === "string" ? profile.lastPlayedDay : "",
     conjugation: normalizeConjugationState(profile?.conjugation),
+    adjective: normalizeAdjectiveState(profile?.adjective),
   };
 }
 

@@ -296,6 +296,76 @@
           </div>
         </section>
       </section>
+
+      <section id="adjectivePanel" class="module-panel" aria-label="Module Atelier adjectifs" hidden>
+        <section class="card adjective-card">
+          <div class="adjective-header">
+            <div>
+              <h2>Atelier adjectifs</h2>
+              <p class="subtitle-small">Complète avec l'adjectif correctement accordé.</p>
+            </div>
+            <div class="adjective-stats compact-adjective-stats">
+              <div>
+                <span class="stat-label">Progression</span>
+                <strong id="adjectiveProgressText">0 / 50</strong>
+              </div>
+              <div>
+                <span class="stat-label">Score</span>
+                <strong id="adjectiveScore">0</strong>
+              </div>
+              <div>
+                <span class="stat-label">Série</span>
+                <strong id="adjectiveStreak">0</strong>
+              </div>
+              <div>
+                <span class="stat-label">Réussite</span>
+                <strong id="adjectiveAccuracy">0 %</strong>
+              </div>
+              <div>
+                <span class="stat-label">Niveau</span>
+                <strong id="adjectiveLevel">1 · découverte</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="adjective-toolbar">
+            <label class="review-label" for="adjectiveCategorySelect">Réviser par catégorie</label>
+            <select id="adjectiveCategorySelect" aria-label="Choisir une catégorie"></select>
+            <button id="adjectiveReviewButton" class="secondary-button compact-button" type="button">
+              Réviser cette catégorie
+            </button>
+            <button id="adjectiveNormalButton" class="secondary-button compact-button" type="button">
+              Retour au parcours
+            </button>
+            <p id="adjectiveSessionMode" class="session-mode">Les besoins de consolidation apparaîtront ici.</p>
+          </div>
+
+          <div class="progress-wrap" aria-label="Progression des exercices adjectifs">
+            <div class="progress-bar" id="adjectiveProgressBar"></div>
+          </div>
+
+          <div class="adjective-exercise">
+            <p id="adjectiveSentence" class="adjective-sentence"></p>
+            <p id="adjectiveHintText" class="hint" aria-live="polite"></p>
+          </div>
+
+          <div class="adjective-actions actions">
+            <button id="adjectiveCheckButton" class="primary-button" type="button">
+              Vérifier
+            </button>
+            <button id="adjectiveHintButton" class="secondary-button" type="button">
+              💡 Indice
+            </button>
+          </div>
+
+          <p id="adjectiveFeedback" class="feedback" aria-live="polite"></p>
+
+          <details class="help-disclosure inline-details">
+            <summary>Voir les statistiques par catégorie</summary>
+            <div id="adjectiveBreakdown" class="breakdown-list"></div>
+          </details>
+        </section>
+      </section>
     </main>
   </body>
 </html>
